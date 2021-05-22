@@ -1,4 +1,4 @@
-import {Maze, generateSquareGrid} from "./sweetmaze.js";
+import { Maze, generateSquareGrid } from "./sweetmaze.js";
 
 const CANVAS_SIZE = 800;
 

@@ -11,6 +11,8 @@ class Cell {
   constructor(x, y) {
     this.x = x;
     this.y = y;
+    this.centerOffsetX = 0;
+    this.centerOffsetY = 0;
     this.neighbours = {};
     this.connectionsOut = [];
     this.connectionsIn = [];
@@ -98,7 +100,7 @@ export class Maze {
     
     let nextCell;
     
-    if (direction.length == 2) {
+    if (Array.isArray(direction) && direction.length == 2) {
       nextCell = this.currentCell.neighbours[direction[0]].neighbours[direction[1]];
       
       this.currentCell.underBridge = true;
@@ -162,7 +164,7 @@ export class Maze {
           walledDirections.splice(walledDirections.indexOf(connection), 1);
         }
         
-        if (connection.length == 2) {
+        if (Array.isArray(connection) && connection.length == 2) {
           bridges.push([cell, cell.neighbours[connection[0]].neighbours[connection[1]]]);
         }
       }
@@ -202,14 +204,14 @@ export class Maze {
       context.lineWidth = lineWidth * bridgeWidth;
       context.strokeStyle = options.bridgeColor;
       context.beginPath();
-      context.moveTo((bridge[0].x + 0.5 + (bridge[1].x - bridge[0].x) / wallFudgeFactor) * scaleX, (bridge[0].y + 0.5 + (bridge[1].y - bridge[0].y) / wallFudgeFactor) * scaleY);
-      context.lineTo((bridge[1].x + 0.5 + (bridge[0].x - bridge[1].x) / wallFudgeFactor) * scaleX, (bridge[1].y + 0.5 + (bridge[0].y - bridge[1].y) / wallFudgeFactor) * scaleY);
+      context.moveTo((bridge[0].x + bridge[0].centerOffsetX + (bridge[1].x - bridge[0].x) / wallFudgeFactor) * scaleX, (bridge[0].y + bridge[0].centerOffsetY + (bridge[1].y - bridge[0].y) / wallFudgeFactor) * scaleY);
+      context.lineTo((bridge[1].x + bridge[1].centerOffsetX + (bridge[0].x - bridge[1].x) / wallFudgeFactor) * scaleX, (bridge[1].y + bridge[1].centerOffsetY + (bridge[0].y - bridge[1].y) / wallFudgeFactor) * scaleY);
       context.stroke();
       context.beginPath();
       context.strokeStyle = options.backgroundColor;
       context.lineWidth = lineWidth * (bridgeWidth - bridgeRailThickness);
-      context.moveTo((bridge[0].x + 0.5 + (bridge[1].x - bridge[0].x) / pathFudgeFactor) * scaleX, (bridge[0].y + 0.5 + (bridge[1].y - bridge[0].y) / pathFudgeFactor) * scaleY);
-      context.lineTo((bridge[1].x + 0.5 + (bridge[0].x - bridge[1].x) / pathFudgeFactor) * scaleX, (bridge[1].y + 0.5 + (bridge[0].y - bridge[1].y) / pathFudgeFactor) * scaleY);
+      context.moveTo((bridge[0].x + bridge[0].centerOffsetX + (bridge[1].x - bridge[0].x) / pathFudgeFactor) * scaleX, (bridge[0].y + bridge[0].centerOffsetY + (bridge[1].y - bridge[0].y) / pathFudgeFactor) * scaleY);
+      context.lineTo((bridge[1].x + bridge[1].centerOffsetX + (bridge[0].x - bridge[1].x) / pathFudgeFactor) * scaleX, (bridge[1].y + bridge[1].centerOffsetY + (bridge[0].y - bridge[1].y) / pathFudgeFactor) * scaleY);
       context.stroke();
     }
     
@@ -220,8 +222,8 @@ export class Maze {
       let cell = this.currentCell ?? this.grid.finish;
       while (cell.parentCell != undefined) {
         const line = [
-          [(cell.x + 0.5) * scaleX, (cell.y + 0.5) * scaleY],
-          [(cell.parentCell.x + 0.5) * scaleX, (cell.parentCell.y + 0.5) * scaleY],
+          [(cell.x + cell.centerOffsetX) * scaleX, (cell.y + cell.centerOffsetY) * scaleY],
+          [(cell.parentCell.x + cell.centerOffsetX) * scaleX, (cell.parentCell.y + cell.centerOffsetY) * scaleY],
           "red",
         ];
         if (cell.bridgeToParent) {
@@ -267,6 +269,8 @@ export function generateSquareGrid(width, height) {
         grid[x] = {};
       }
       grid[x][y] = new Cell(x, y);
+      grid[x][y].centerOffsetX = 0.5;
+      grid[x][y].centerOffsetY = 0.5;
     }
   }
   
@@ -275,20 +279,20 @@ export function generateSquareGrid(width, height) {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       if (x - 1 >= 0) {
-        grid[x - 1][y].neighbours["x+1"] = grid[x][y];
-        grid[x][y].neighbours["x-1"] = grid[x - 1][y];
+        grid[x - 1][y].neighbours["r"] = grid[x][y];
+        grid[x][y].neighbours["l"] = grid[x - 1][y];
       }
       if (x + 1 < width) {
-        grid[x + 1][y].neighbours["x-1"] = grid[x][y];
-        grid[x][y].neighbours["x+1"] = grid[x + 1][y];
+        grid[x + 1][y].neighbours["l"] = grid[x][y];
+        grid[x][y].neighbours["r"] = grid[x + 1][y];
       }
       if (y - 1 >= 0) {
-        grid[x][y - 1].neighbours["y+1"] = grid[x][y];
-        grid[x][y].neighbours["y-1"] = grid[x][y - 1];
+        grid[x][y - 1].neighbours["d"] = grid[x][y];
+        grid[x][y].neighbours["u"] = grid[x][y - 1];
       }
       if (y + 1 < height) {
-        grid[x][y + 1].neighbours["y-1"] = grid[x][y];
-        grid[x][y].neighbours["y+1"] = grid[x][y + 1];
+        grid[x][y + 1].neighbours["u"] = grid[x][y];
+        grid[x][y].neighbours["d"] = grid[x][y + 1];
       }
       cells.push(grid[x][y]);
     }
@@ -298,13 +302,13 @@ export function generateSquareGrid(width, height) {
     width,
     height,
     cells,
-    ["x+1", "x-1", "y+1", "y-1"],
-    { "x+1": "x-1", "x-1": "x+1", "y+1": "y-1", "y-1": "y+1" },
+    ["r", "l", "d", "u"],
+    { "r": "l", "l": "r", "d": "u", "u": "d" },
     {
-      "x+1": [[1, 0], [1, 1]],
-      "x-1": [[0, 0], [0, 1]],
-      "y+1": [[0, 1], [1, 1]],
-      "y-1": [[0, 0], [1, 0]],
+      "r": [[1, 0], [1, 1]],
+      "l": [[0, 0], [0, 1]],
+      "d": [[0, 1], [1, 1]],
+      "u": [[0, 0], [1, 0]],
     },
     grid[0][0],
     grid[width - 1][height - 1]);
