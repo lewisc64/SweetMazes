@@ -16,6 +16,7 @@ class Cell {
     this.connectionsIn = [];
     this.underBridge = false;
     this.parentCell = null;
+    this.bridgeToParent = false;
   }
 }
 
@@ -61,7 +62,7 @@ export class Maze {
         
         if (neighbour.connectionsIn.length == 0 && neighbour.connectionsOut.length == 0) {
           directions.push(direction);
-        } else if (bridgeTo != null && !this.currentCell.underBridge && !neighbour.underBridge && !bridgeTo.underBridge && bridgeTo.connectionsIn.length == 0 && bridgeTo.connectionsOut.length == 0) {
+        } else if (bridgeTo != null && !neighbour.underBridge && bridgeTo.connectionsIn.length == 0 && bridgeTo.connectionsOut.length == 0) {
           if (this.randomNumberFunction() < this.bridgeChance) {
             directions.push([direction, direction]);
           }
@@ -100,15 +101,21 @@ export class Maze {
     if (direction.length == 2) {
       nextCell = this.currentCell.neighbours[direction[0]].neighbours[direction[1]];
       
+      this.currentCell.underBridge = true;
       this.currentCell.neighbours[direction[0]].underBridge = true;
+      nextCell.underBridge = true;
       
       this.currentCell.connectionsOut.push(direction);
       nextCell.connectionsIn.push([this.grid.directionReversingTable[direction[0]], this.grid.directionReversingTable[direction[1]]]);
+      
+      nextCell.bridgeToParent = true;
     } else {
       nextCell = this.currentCell.neighbours[direction];
       
       this.currentCell.connectionsOut.push(direction);
       nextCell.connectionsIn.push(this.grid.directionReversingTable[direction]);
+      
+      nextCell.bridgeToParent = false;
     }
     
     this.openCells.push(this.currentCell);
@@ -122,7 +129,7 @@ export class Maze {
       options = {};
     }
     options.wallColor = options.wallColor ?? "#000";
-    options.bridgeColor = options.bridgeColor ?? "#555";
+    options.bridgeColor = options.bridgeColor ?? "#666";
     options.backgroundColor = options.backgroundColor ?? "#fff";
     options.showSolution = options.showSolution ?? false;
     
@@ -175,41 +182,79 @@ export class Maze {
     
     context.stroke();
     
-    const wallFudgeFactor = 6;
-    const pathFudgeFactor = 7;
-    const bridgeWidth = 4.5;
+    function drawSolutionLineSegment(line) {
+      context.beginPath();
+      context.lineWidth = lineWidth;
+      context.strokeStyle = line[2];
+      context.lineCap = "round";
+      context.moveTo(...line[0]);
+      context.lineTo(...line[1]);
+      context.stroke();
+    }
     
-    context.lineCap = "butt";
-    
-    for (const bridge of bridges) {
+    function drawBridge(bridge) {
+      const wallFudgeFactor = 6;
+      const pathFudgeFactor = 7;
+      const bridgeWidth = 4.5;
+      const bridgeRailThickness = 1;
+      context.lineCap = "butt";
+      
       context.lineWidth = lineWidth * bridgeWidth;
       context.strokeStyle = options.bridgeColor;
       context.beginPath();
       context.moveTo((bridge[0].x + 0.5 + (bridge[1].x - bridge[0].x) / wallFudgeFactor) * scaleX, (bridge[0].y + 0.5 + (bridge[1].y - bridge[0].y) / wallFudgeFactor) * scaleY);
       context.lineTo((bridge[1].x + 0.5 + (bridge[0].x - bridge[1].x) / wallFudgeFactor) * scaleX, (bridge[1].y + 0.5 + (bridge[0].y - bridge[1].y) / wallFudgeFactor) * scaleY);
       context.stroke();
+      context.beginPath();
       context.strokeStyle = options.backgroundColor;
-      context.lineWidth = lineWidth * (bridgeWidth - 1.5);
+      context.lineWidth = lineWidth * (bridgeWidth - bridgeRailThickness);
       context.moveTo((bridge[0].x + 0.5 + (bridge[1].x - bridge[0].x) / pathFudgeFactor) * scaleX, (bridge[0].y + 0.5 + (bridge[1].y - bridge[0].y) / pathFudgeFactor) * scaleY);
       context.lineTo((bridge[1].x + 0.5 + (bridge[0].x - bridge[1].x) / pathFudgeFactor) * scaleX, (bridge[1].y + 0.5 + (bridge[0].y - bridge[1].y) / pathFudgeFactor) * scaleY);
       context.stroke();
     }
     
+    const lines = [];
+    const linesAbove = [];
+    
     if (options.showSolution) {
-      context.beginPath();
-      
-      context.lineWidth = lineWidth;
-      context.strokeStyle = "#f00";
-      context.lineCap = "round";
-      
       let cell = this.currentCell ?? this.grid.finish;
       while (cell.parentCell != undefined) {
-        context.moveTo((cell.x + 0.5) * scaleX, (cell.y + 0.5) * scaleY);
-        context.lineTo((cell.parentCell.x + 0.5) * scaleX, (cell.parentCell.y + 0.5) * scaleY);
+        const line = [
+          [(cell.x + 0.5) * scaleX, (cell.y + 0.5) * scaleY],
+          [(cell.parentCell.x + 0.5) * scaleX, (cell.parentCell.y + 0.5) * scaleY],
+          "red",
+        ];
+        if (cell.bridgeToParent) {
+          linesAbove.push(line);
+        }
+        
+        lines.push(line);
+        
         cell = cell.parentCell;
       }
-      
-      context.stroke();
+    }
+    
+    const angleStep = 5;
+    let angle = 0;
+    
+    for (const line of lines) {
+      const gradient = context.createLinearGradient(line[0][0], line[0][1], line[1][0], line[1][1]);
+      gradient.addColorStop(0, `hsl(${angle}, 100%, 50%)`);
+      gradient.addColorStop(1, `hsl(${angle + angleStep}, 100%, 50%)`);
+      line[2] = gradient;
+      angle += angleStep;
+    }
+    
+    for (const line of lines) {
+      drawSolutionLineSegment(line);
+    }
+    
+    for (const bridge of bridges) {
+      drawBridge(bridge);
+    }
+    
+    for (const line of linesAbove) {
+      drawSolutionLineSegment(line);
     }
   }
 }
