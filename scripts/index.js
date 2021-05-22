@@ -100,7 +100,19 @@ document.getElementById("render").addEventListener("click", () => {
     }
     drawMaze(renderContext);
     
-    window.open(canvas.toDataURL("image/png"), "_blank");
+    const seed = Number(document.getElementById("param-seed").value);
+    const width = Number(document.getElementById("param-width").value);
+    const height = Number(document.getElementById("param-height").value);
+    
+    const a = document.createElement("a");
+    a.download = `maze_${width}x${height}_${seed}`;
+    a.href = canvas.toDataURL();
+    try {
+      document.body.appendChild(a);
+      a.click();
+    } finally {
+      document.body.removeChild(a);
+    }
   } finally {
     document.body.removeChild(canvas);
   }
