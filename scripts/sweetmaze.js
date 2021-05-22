@@ -1,3 +1,12 @@
+function mulberry32(a) {
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
 class Cell {
   constructor(x, y) {
     this.x = x;
@@ -24,11 +33,12 @@ class Grid {
 }
 
 export class Maze {
-  constructor(grid) {
+  constructor(grid, seed) {
     this.grid = grid
     this.openCells = [];
     this.currentCell = this.grid.start;
     this.bridgeChance = 1.0;
+    this.randomNumberFunction = mulberry32(seed ?? (Math.floor(Math.random() * 2147483647) + 1));
   }
   
   generate() {
@@ -52,7 +62,7 @@ export class Maze {
         if (neighbour.connectionsIn.length == 0 && neighbour.connectionsOut.length == 0) {
           directions.push(direction);
         } else if (bridgeTo != null && !this.currentCell.underBridge && !neighbour.underBridge && !bridgeTo.underBridge && bridgeTo.connectionsIn.length == 0 && bridgeTo.connectionsOut.length == 0) {
-          if (Math.random() < this.bridgeChance) {
+          if (this.randomNumberFunction() < this.bridgeChance) {
             directions.push([direction, direction]);
           }
         }
@@ -83,7 +93,7 @@ export class Maze {
       return;
     }
     
-    const direction = directions[Math.floor(Math.random() * directions.length)];
+    const direction = directions[Math.floor(this.randomNumberFunction() * directions.length)];
     
     let nextCell;
     

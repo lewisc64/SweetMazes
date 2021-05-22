@@ -1,5 +1,36 @@
 <link rel="stylesheet" type="text/css" href="styles/index.css">
 
-<canvas width=800 height=800 id=display></canvas>
+<main>
+  <div id=controls>
+    <section id=parameters class=fields>
+      <label for=param-seed>Seed</label>
+      <input type=number id=param-seed></input>
+      <label for=param-width>Width</label>
+      <input type=number id=param-width></input>
+      <label for=param-height>Height</label>
+      <input type=number id=param-height></input>
+      <label for=param-bridge-chance>Bridge Chance</label>
+      <input type=number id=param-bridge-chance></input>
+      <label for=param-show-solution>Show solution?</label>
+      <input type=checkbox id=param-show-solution></input>
+    </section>
+    
+    <button id=reseed>Reseed</button>
+    <button id=generate-now>Quickly Complete</button>
+    <button id=reseed-now>Reseed and Quickly Complete</button>
+    
+    <section id=rendering class=fields>
+      <label for=param-seed>Pixels per-cell</label>
+      <input type=number id=render-param-pixels-per-cell></input>
+    </section>
+    
+    <button id=render>Render</button>
+  </div>
+  
+  <div id=view>
+    <canvas width=800 height=800 id=display></canvas>
+  </div>
+</main>
+
 
 <script type="module" src="scripts/index.js"></script>
