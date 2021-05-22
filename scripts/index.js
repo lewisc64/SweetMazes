@@ -94,7 +94,10 @@ document.getElementById("render").addEventListener("click", () => {
     canvas.width = pixelsPerCell * maze.grid.width;
     canvas.height = pixelsPerCell * maze.grid.height;
     
-    maze.generate();
+    if (maze.currentCell != null) {
+      maze.generate();
+      drawMaze(previewContext);
+    }
     drawMaze(renderContext);
     
     window.open(canvas.toDataURL("image/png"), "_blank");
