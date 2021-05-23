@@ -1,5 +1,5 @@
-function mulberry32(a) {
-  return function() {
+function createRNG(a) {
+  return () => {
     let t = a += 0x6D2B79F5;
     t = Math.imul(t ^ t >>> 15, t | 1);
     t ^= t + Math.imul(t ^ t >>> 7, t | 61);
@@ -41,7 +41,12 @@ export class Maze {
     this.openCells = [];
     this.currentCell = this.grid.start;
     this.bridgeChance = 1.0;
-    this.randomNumberFunction = mulberry32(seed ?? (Math.floor(Math.random() * 2147483647) + 1));
+    this.randomNumberFunction = createRNG(seed ?? (Math.floor(Math.random() * 2147483647) + 1));
+    this.wonkiness = 0.0;
+  }
+  
+  getWonkyNumber() {
+    return (Math.random() - 0.5) * this.wonkiness / 10;
   }
   
   generate() {
@@ -55,6 +60,8 @@ export class Maze {
       return;
     }
     
+    let canBridge = false;
+    
     const directions = [];
     for (const direction in this.currentCell.neighbours) {
       const neighbour = this.currentCell.neighbours[direction];
@@ -67,19 +74,13 @@ export class Maze {
         } else if (bridgeTo != null && !neighbour.underBridge && bridgeTo.connectionsIn.length == 0 && bridgeTo.connectionsOut.length == 0) {
           if (this.randomNumberFunction() < this.bridgeChance) {
             directions.push([direction, direction]);
+            canBridge = true;
           }
         }
       }
     }
     
-    let bridgeFound = false;
-    for (let direction of directions) {
-      if (direction.length == 2) {
-        bridgeFound = true;
-        break
-      }
-    }
-    if (bridgeFound) {
+    if (canBridge) {
       for (let i = directions.length - 1; i >= 0; i--) {
         if (directions[i].length != 2) {
           directions.splice(i, 1);
@@ -177,8 +178,8 @@ export class Maze {
       
       for (const direction of walledDirections) {
         const line = this.grid.directionWalls[direction];
-        context.moveTo((cell.x + line[0][0]) * scaleX, (cell.y + line[0][1]) * scaleY);
-        context.lineTo((cell.x + line[1][0]) * scaleX, (cell.y + line[1][1]) * scaleY);
+        context.moveTo((cell.x + line[0][0] + this.getWonkyNumber()) * scaleX, (cell.y + line[0][1] + this.getWonkyNumber()) * scaleY);
+        context.lineTo((cell.x + line[1][0] + this.getWonkyNumber()) * scaleX, (cell.y + line[1][1] + this.getWonkyNumber()) * scaleY);
       }
     }
     
@@ -194,24 +195,33 @@ export class Maze {
       context.stroke();
     }
     
-    function drawBridge(bridge) {
+    let drawBridge = (bridge) => {
       const wallFudgeFactor = 6;
       const pathFudgeFactor = 7;
       const bridgeWidth = 4.5;
       const bridgeRailThickness = 1;
       context.lineCap = "butt";
       
+      const wonky1 = this.getWonkyNumber() * 2;
+      const wonky2 = this.getWonkyNumber() * 2;
+      
+      const x1 = bridge[0].x + bridge[0].centerOffsetX + wonky1;
+      const y1 = bridge[0].y + bridge[0].centerOffsetY + wonky2;
+      
+      const x2 = bridge[1].x + bridge[1].centerOffsetX + wonky2;
+      const y2 = bridge[1].y + bridge[1].centerOffsetY + wonky1;
+      
       context.lineWidth = lineWidth * bridgeWidth;
       context.strokeStyle = options.bridgeColor;
       context.beginPath();
-      context.moveTo((bridge[0].x + bridge[0].centerOffsetX + (bridge[1].x - bridge[0].x) / wallFudgeFactor) * scaleX, (bridge[0].y + bridge[0].centerOffsetY + (bridge[1].y - bridge[0].y) / wallFudgeFactor) * scaleY);
-      context.lineTo((bridge[1].x + bridge[1].centerOffsetX + (bridge[0].x - bridge[1].x) / wallFudgeFactor) * scaleX, (bridge[1].y + bridge[1].centerOffsetY + (bridge[0].y - bridge[1].y) / wallFudgeFactor) * scaleY);
+      context.moveTo((x1 + (bridge[1].x - bridge[0].x) / wallFudgeFactor) * scaleX, (y1 + (bridge[1].y - bridge[0].y) / wallFudgeFactor) * scaleY);
+      context.lineTo((x2 + (bridge[0].x - bridge[1].x) / wallFudgeFactor) * scaleX, (y2 + (bridge[0].y - bridge[1].y) / wallFudgeFactor) * scaleY);
       context.stroke();
       context.beginPath();
       context.strokeStyle = options.backgroundColor;
       context.lineWidth = lineWidth * (bridgeWidth - bridgeRailThickness);
-      context.moveTo((bridge[0].x + bridge[0].centerOffsetX + (bridge[1].x - bridge[0].x) / pathFudgeFactor) * scaleX, (bridge[0].y + bridge[0].centerOffsetY + (bridge[1].y - bridge[0].y) / pathFudgeFactor) * scaleY);
-      context.lineTo((bridge[1].x + bridge[1].centerOffsetX + (bridge[0].x - bridge[1].x) / pathFudgeFactor) * scaleX, (bridge[1].y + bridge[1].centerOffsetY + (bridge[0].y - bridge[1].y) / pathFudgeFactor) * scaleY);
+      context.moveTo((x1 + (bridge[1].x - bridge[0].x) / pathFudgeFactor) * scaleX, (y1 + (bridge[1].y - bridge[0].y) / pathFudgeFactor) * scaleY);
+      context.lineTo((x2 + (bridge[0].x - bridge[1].x) / pathFudgeFactor) * scaleX, (y2 + (bridge[0].y - bridge[1].y) / pathFudgeFactor) * scaleY);
       context.stroke();
     }
     
@@ -223,7 +233,7 @@ export class Maze {
       while (cell.parentCell != undefined) {
         const line = [
           [(cell.x + cell.centerOffsetX) * scaleX, (cell.y + cell.centerOffsetY) * scaleY],
-          [(cell.parentCell.x + cell.centerOffsetX) * scaleX, (cell.parentCell.y + cell.centerOffsetY) * scaleY],
+          [(cell.parentCell.x + cell.parentCell.centerOffsetX) * scaleX, (cell.parentCell.y + cell.parentCell.centerOffsetY) * scaleY],
           "red",
         ];
         if (cell.bridgeToParent) {
