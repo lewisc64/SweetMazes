@@ -3,7 +3,6 @@ import { Maze, generateSquareGrid } from "./sweetmaze.js";
 const CANVAS_SIZE = 800;
 
 let maze = null;
-let showSolution = false;
 let previewContext = document.getElementById("display").getContext("2d");
 
 let nextGeneratorStep = Date.now();
@@ -36,7 +35,14 @@ function drawMazeLoop() {
 }
 
 function drawMaze(ctx) {
-  maze.draw(ctx, { showSolution: showSolution });
+  maze.draw(ctx,
+    {
+      showSolution: document.getElementById("draw-param-show-solution").checked,
+      wallColor: document.getElementById("draw-param-wall-color").value,
+      bridgeColor: document.getElementById("draw-param-bridge-color").value,
+      backgroundColor: document.getElementById("draw-param-background-color").value,
+      wonkiness: Number(document.getElementById("draw-param-wonkiness").value),
+    });
 }
 
 function reseed() {
@@ -47,10 +53,15 @@ function setDefaultOptions() {
   document.getElementById("param-width").value = 20;
   document.getElementById("param-height").value = 20;
   document.getElementById("param-bridge-chance").value = "1.0";
-  document.getElementById("param-show-solution").checked = false;
   reseed();
   
   document.getElementById("render-param-pixels-per-cell").value = 40;
+  
+  document.getElementById("draw-param-show-solution").checked = false;
+  document.getElementById("draw-param-wall-color").value = "#000000";
+  document.getElementById("draw-param-bridge-color").value = "#666666";
+  document.getElementById("draw-param-background-color").value = "#ffffff";
+  document.getElementById("draw-param-wonkiness").value = "0.0";
 }
 
 for (let elemId of ["param-seed", "param-width", "param-height", "param-bridge-chance"]) {
@@ -59,10 +70,11 @@ for (let elemId of ["param-seed", "param-width", "param-height", "param-bridge-c
   });
 }
 
-document.getElementById("param-show-solution").addEventListener("change", e => {
-  showSolution = e.target.checked;
-  drawMaze(previewContext);
-});
+for (let elemId of ["draw-param-show-solution", "draw-param-wall-color", "draw-param-bridge-color", "draw-param-background-color", "draw-param-wonkiness"]) {
+  document.getElementById(elemId).addEventListener("change", () => {
+    drawMaze(previewContext);
+  });
+}
 
 document.getElementById("reseed").addEventListener("click", () => {
   reseed();

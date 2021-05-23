@@ -9,18 +9,41 @@ body {
 }
 
 main {
-  display: grid;
-  grid-template-columns: 1fr 6fr;
+  display: flex;
+  grid-template-columns: 24rem auto;
+  background-color: #FAFAFA;
+  justify-content: left;
+}
+
+#display {
+  margin: 1rem;
 }
 
 #controls {
-  padding: 1rem;
-  background-color: #FAFAFA;
   color: #222;
+  width: 24rem;
+  flex-grow: 0;
+  overflow-y: scroll;
 }
 
-#controls > button {
-  margin: 1rem;  
+.group {
+  background-color: #EEEEEE;
+  padding: 2rem;
+  margin: 1rem;
+  border-radius: 0.2rem;
+  filter: drop-shadow(1px 2px 2px #777);
+}
+
+.group > h1 {
+  margin-top: 0;
+}
+
+.group > section {
+  margin-bottom: 1rem;
+}
+
+.group > button {
+  margin: 0.5rem;  
 }
 
 button {

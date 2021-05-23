@@ -42,11 +42,10 @@ export class Maze {
     this.currentCell = this.grid.start;
     this.bridgeChance = 1.0;
     this.randomNumberFunction = createRNG(seed ?? (Math.floor(Math.random() * 2147483647) + 1));
-    this.wonkiness = 0.0;
   }
   
-  getWonkyNumber() {
-    return (Math.random() - 0.5) * this.wonkiness / 10;
+  getWonkyNumber(wonkFactor) {
+    return (Math.random() - 0.5) * wonkFactor / 10;
   }
   
   generate() {
@@ -132,9 +131,10 @@ export class Maze {
       options = {};
     }
     options.wallColor = options.wallColor ?? "#000";
-    options.bridgeColor = options.bridgeColor ?? "#666";
+    options.bridgeColor = options.bridgeColor ?? "#666666";
     options.backgroundColor = options.backgroundColor ?? "#fff";
     options.showSolution = options.showSolution ?? false;
+    options.wonkiness = options.wonkiness ?? 0.0;
     
     context.fillStyle = options.backgroundColor;
     context.strokeStyle = options.wallColor;
@@ -178,8 +178,8 @@ export class Maze {
       
       for (const direction of walledDirections) {
         const line = this.grid.directionWalls[direction];
-        context.moveTo((cell.x + line[0][0] + this.getWonkyNumber()) * scaleX, (cell.y + line[0][1] + this.getWonkyNumber()) * scaleY);
-        context.lineTo((cell.x + line[1][0] + this.getWonkyNumber()) * scaleX, (cell.y + line[1][1] + this.getWonkyNumber()) * scaleY);
+        context.moveTo((cell.x + line[0][0] + this.getWonkyNumber(options.wonkiness)) * scaleX, (cell.y + line[0][1] + this.getWonkyNumber(options.wonkiness)) * scaleY);
+        context.lineTo((cell.x + line[1][0] + this.getWonkyNumber(options.wonkiness)) * scaleX, (cell.y + line[1][1] + this.getWonkyNumber(options.wonkiness)) * scaleY);
       }
     }
     
@@ -202,8 +202,8 @@ export class Maze {
       const bridgeRailThickness = 1;
       context.lineCap = "butt";
       
-      const wonky1 = this.getWonkyNumber() * 2;
-      const wonky2 = this.getWonkyNumber() * 2;
+      const wonky1 = this.getWonkyNumber(options.wonkiness) * 2;
+      const wonky2 = this.getWonkyNumber(options.wonkiness) * 2;
       
       const x1 = bridge[0].x + bridge[0].centerOffsetX + wonky1;
       const y1 = bridge[0].y + bridge[0].centerOffsetY + wonky2;
