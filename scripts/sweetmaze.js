@@ -47,7 +47,6 @@ export class Maze {
     
     this.randomNumberFunction = createRNG(seed ?? (Math.floor(Math.random() * 2147483647) + 1));
     
-    /*
     this.backtrackFunction = () => {
       if (this.currentCell == this.grid.finish) {
         this.backtrackFunction = () => {
@@ -58,11 +57,12 @@ export class Maze {
         this.currentCell = this.openCells[this.openCells.length - 1];
       }
     }
-    */
     
+    /*
     this.backtrackFunction = () => {
       this.currentCell = this.openCells[0];
     }
+    */
   }
   
   getWonkyNumber(wonkFactor) {
