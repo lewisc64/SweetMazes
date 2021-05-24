@@ -191,6 +191,10 @@ export class Maze {
     
     for (const cell of this.grid.cells) {
       
+      if (cell.connectionsIn.length == 0 && cell.connectionsOut.length == 0) {
+        continue;
+      }
+      
       const walledDirections = [...this.grid.directions];
       
       for (const connection of cell.connectionsOut) {
