@@ -40,12 +40,23 @@ export class Maze {
     this.grid = grid
     this.openCells = [];
     this.currentCell = this.grid.start;
-    this.bridgeChance = 1.0;
+    this.lastDirection = null;
+    
+    this.bridgeChance = 0.3;
+    this.turningProbability = 0.3;
     this.randomNumberFunction = createRNG(seed ?? (Math.floor(Math.random() * 2147483647) + 1));
   }
   
   getWonkyNumber(wonkFactor) {
     return (Math.random() - 0.5) * wonkFactor / 10;
+  }
+  
+  backtrack() {
+    this.lastDirection = null;
+    this.openCells.splice(this.openCells.indexOf(this.currentCell), 1);
+    // this.currentCell = this.openCells[Math.floor(this.randomNumberFunction() * this.openCells.length)];
+    this.currentCell = this.openCells[0];
+    // this.currentCell = this.openCells[this.openCells.length - 1];
   }
   
   generate() {
@@ -88,15 +99,21 @@ export class Maze {
     }
     
     if (directions.length == 0 || this.currentCell == this.grid.finish) {
-      this.openCells.splice(this.openCells.indexOf(this.currentCell), 1);
-      // this.currentCell = this.openCells[Math.floor(Math.random() * this.openCells.length)];
-      this.currentCell = this.openCells[0];
-      // this.currentCell = this.openCells[this.openCells.length - 1];
+      this.backtrack();
       this.performGenerationStep();
       return;
     }
     
-    const direction = directions[Math.floor(this.randomNumberFunction() * directions.length)];
+    let direction;
+    if (directions.indexOf(this.lastDirection) != -1 && this.randomNumberFunction() > this.turningProbability) {
+      direction = this.lastDirection;
+    } else {
+      if (directions.length >= 2 && directions.indexOf(this.lastDirection) != -1) {
+        directions.splice(directions.indexOf(this.lastDirection), 1);
+      }
+      direction = directions[Math.floor(this.randomNumberFunction() * directions.length)];
+      this.lastDirection = direction;
+    }
     
     let nextCell;
     

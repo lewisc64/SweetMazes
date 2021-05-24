@@ -22,6 +22,7 @@ function createMaze() {
   
   maze = new Maze(generateSquareGrid(width, height), seed);
   maze.bridgeChance = document.getElementById("param-bridge-chance").value;
+  maze.turningProbability = document.getElementById("param-turn-probability").value;
 }
 
 function drawMazeLoop() {
@@ -52,7 +53,8 @@ function reseed() {
 function setDefaultOptions() {
   document.getElementById("param-width").value = 20;
   document.getElementById("param-height").value = 20;
-  document.getElementById("param-bridge-chance").value = "1.0";
+  document.getElementById("param-bridge-chance").value = "0.3";
+  document.getElementById("param-turn-probability").value = "0.3";
   reseed();
   
   document.getElementById("render-param-pixels-per-cell").value = 40;
@@ -64,7 +66,7 @@ function setDefaultOptions() {
   document.getElementById("draw-param-wonkiness").value = "0.0";
 }
 
-for (let elemId of ["param-seed", "param-width", "param-height", "param-bridge-chance"]) {
+for (let elemId of ["param-seed", "param-width", "param-height", "param-bridge-chance", "param-turn-probability"]) {
   document.getElementById(elemId).addEventListener("change", () => {
     createMaze();
   });
