@@ -44,7 +44,25 @@ export class Maze {
     
     this.bridgeChance = 0.3;
     this.turningProbability = 0.3;
+    
     this.randomNumberFunction = createRNG(seed ?? (Math.floor(Math.random() * 2147483647) + 1));
+    
+    /*
+    this.backtrackFunction = () => {
+      if (this.currentCell == this.grid.finish) {
+        this.backtrackFunction = () => {
+          this.currentCell = this.openCells[0];
+        };
+        this.backtrackFunction();
+      } else {
+        this.currentCell = this.openCells[this.openCells.length - 1];
+      }
+    }
+    */
+    
+    this.backtrackFunction = () => {
+      this.currentCell = this.openCells[0];
+    }
   }
   
   getWonkyNumber(wonkFactor) {
@@ -54,9 +72,7 @@ export class Maze {
   backtrack() {
     this.lastDirection = null;
     this.openCells.splice(this.openCells.indexOf(this.currentCell), 1);
-    // this.currentCell = this.openCells[Math.floor(this.randomNumberFunction() * this.openCells.length)];
-    this.currentCell = this.openCells[0];
-    // this.currentCell = this.openCells[this.openCells.length - 1];
+    this.backtrackFunction();
   }
   
   generate() {
