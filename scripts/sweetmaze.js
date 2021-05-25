@@ -47,6 +47,7 @@ export class Maze {
     
     this.randomNumberFunction = createRNG(seed ?? (Math.floor(Math.random() * 2147483647) + 1));
     
+    /* YOUGEST -> FINISH -> OLDEST
     this.backtrackFunction = () => {
       if (this.currentCell == this.grid.finish) {
         this.backtrackFunction = () => {
@@ -57,10 +58,34 @@ export class Maze {
         this.currentCell = this.openCells[this.openCells.length - 1];
       }
     }
+    */
     
-    /*
+    /* OLDEST */
     this.backtrackFunction = () => {
       this.currentCell = this.openCells[0];
+    }
+    
+    
+    /* RANDOM
+    this.backtrackFunction = () => {
+      this.currentCell = this.openCells[Math.floor(this.randomNumberFunction() * this.openCells.length)];
+    }
+    */
+    
+    /* YOUNGEST -> OLDEST
+    let n = 0;
+    this.backtrackFunction = () => {
+      if (n++ % 2 == 0) {
+        this.currentCell = this.openCells[0];
+      } else {
+        this.currentCell = this.openCells[this.openCells.length - 1];
+      }
+    }
+    */
+    
+    /* MIDDLE AGED
+    this.backtrackFunction = () => {
+      this.currentCell = this.openCells[Math.floor(this.openCells.length / 2)];
     }
     */
   }
