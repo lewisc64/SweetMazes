@@ -10,7 +10,6 @@ body {
 
 main {
   display: flex;
-  grid-template-columns: 24rem auto;
   background-color: #FAFAFA;
   justify-content: left;
 }
@@ -68,7 +67,7 @@ button:active {
 }
 
 input {
-  border: 2px solid #222;
+  border: 0.15rem solid #222;
   border-radius: 0.2rem;
 }
 
@@ -76,4 +75,27 @@ input {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-row-gap: 0.5rem;
+}
+
+@media (pointer:none), (pointer:coarse) {
+  body {
+    font-size: 2rem;
+  }
+  
+  main {
+    flex-direction: column;
+  }
+  
+  #controls {
+    width: 100%;
+  }
+  
+  button {
+    font-size: 2rem;
+    padding: 1rem;
+  }
+  
+  input {
+    font-size: 2rem;
+  }
 }
