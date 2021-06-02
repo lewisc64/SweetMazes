@@ -1,6 +1,11 @@
-import { Maze, generateSquareGrid } from "./sweetmaze.js";
+import { Maze, generateSquareGrid, generateHexGrid } from "./sweetmaze.js";
 
 const CANVAS_SIZE = 800;
+
+const GRID_TYPES = {
+  "Square": generateSquareGrid,
+  "Hexagonal": generateHexGrid,
+};
 
 let maze = null;
 let previewContext = document.getElementById("display").getContext("2d");
@@ -20,7 +25,8 @@ function createMaze() {
     previewContext.canvas.width = CANVAS_SIZE * width / height;
   }
   
-  maze = new Maze(generateSquareGrid(width, height), seed);
+  // maze = new Maze(generateHexGrid(width, height), seed);
+  maze = new Maze(GRID_TYPES[document.getElementById("param-grid").value](width, height), seed);
   maze.bridgeChance = document.getElementById("param-bridge-chance").value;
   maze.turningProbability = document.getElementById("param-turn-probability").value;
 }
@@ -51,6 +57,7 @@ function reseed() {
 }
 
 function setDefaultOptions() {
+  document.getElementById("param-grid").value = "Square";
   document.getElementById("param-width").value = 20;
   document.getElementById("param-height").value = 20;
   document.getElementById("param-bridge-chance").value = "0.3";
@@ -66,7 +73,7 @@ function setDefaultOptions() {
   document.getElementById("draw-param-wonkiness").value = "0.0";
 }
 
-for (let elemId of ["param-seed", "param-width", "param-height", "param-bridge-chance", "param-turn-probability"]) {
+for (let elemId of ["param-seed", "param-grid", "param-width", "param-height", "param-bridge-chance", "param-turn-probability"]) {
   document.getElementById(elemId).addEventListener("change", () => {
     createMaze();
   });

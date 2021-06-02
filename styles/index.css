@@ -20,7 +20,7 @@ main {
 
 #controls {
   color: #222;
-  width: 24rem;
+  width: 28rem;
   flex-grow: 0;
   overflow-y: scroll;
 }
@@ -66,7 +66,7 @@ button:active {
   transition: 0.1s;
 }
 
-input {
+input, select {
   border: 0.15rem solid #222;
   border-radius: 0.2rem;
 }
@@ -95,7 +95,7 @@ input {
     padding: 1rem;
   }
   
-  input {
+  input, select {
     font-size: 2rem;
   }
 }

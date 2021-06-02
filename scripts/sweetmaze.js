@@ -122,7 +122,7 @@ export class Maze {
         
         if (neighbour.connectionsIn.length == 0 && neighbour.connectionsOut.length == 0) {
           directions.push(direction);
-        } else if (bridgeTo != null && !neighbour.underBridge && bridgeTo.connectionsIn.length == 0 && bridgeTo.connectionsOut.length == 0) {
+        } else if (bridgeTo != null && !this.currentCell.underBridge && !neighbour.underBridge && !bridgeTo.underBridge && bridgeTo.connectionsIn.length == 0 && bridgeTo.connectionsOut.length == 0) {
           if (this.randomNumberFunction() < this.bridgeChance) {
             directions.push([direction, direction]);
             canBridge = true;
@@ -193,21 +193,47 @@ export class Maze {
     options.backgroundColor = options.backgroundColor ?? "#fff";
     options.showSolution = options.showSolution ?? false;
     options.wonkiness = options.wonkiness ?? 0.0;
+    options.enclosed = options.enclosed ?? false;
+    
+    const bufferSize = Math.max(context.canvas.clientWidth / this.grid.width, context.canvas.clientHeight / this.grid.height);
+    const xOffset = bufferSize;
+    const yOffset = bufferSize;
     
     context.fillStyle = options.backgroundColor;
     context.strokeStyle = options.wallColor;
     context.fillRect(0, 0, context.canvas.width, context.canvas.height);
     
-    const scaleX = context.canvas.clientWidth / this.grid.width;
-    const scaleY = context.canvas.clientHeight / this.grid.height;
+    const scale = Math.min((context.canvas.clientWidth - 2 * bufferSize) / this.grid.width, (context.canvas.clientHeight - 2 * bufferSize) / this.grid.height);
+    const scaleX = scale;
+    const scaleY = scale;
     
-    const lineWidth = Math.min(scaleX / 10, scaleY / 10);
+    
+    const lineWidth = Math.ceil(scale / 10);
+    
+    function pointToCanvas(x, y) {
+      if (lineWidth == 1) {
+        return [Math.floor(xOffset + x * scaleX) + 0.5, Math.floor(yOffset + y * scaleY) + 0.5];
+      }
+      return [xOffset + x * scaleX, yOffset + y * scaleY];
+    }
+    
+    /* circles
+    context.lineWidth = 1;
+    for (const cell of this.grid.cells) {
+      context.beginPath();
+      context.arc(...pointToCanvas(cell.x, cell.y), 0.5 * scaleX, 0, 2 * Math.PI);
+      context.stroke();
+    }
+    // return;
+    */
+    
     
     if (this.grid.directions.length == 4) {
       context.lineCap = "square";
     } else {
       context.lineCap = "round";
     }
+    
     context.lineWidth = lineWidth;
     
     let bridges = [];
@@ -238,10 +264,15 @@ export class Maze {
         }
       }
       
+      let wallBroken = false;
       for (const direction of walledDirections) {
+        if (!options.enclosed && !wallBroken && (cell == this.grid.start || cell == this.grid.finish) && cell.neighbours[direction] == undefined) {
+          wallBroken = true;
+          continue;
+        }
         const line = this.grid.directionWalls[direction];
-        context.moveTo((cell.x + line[0][0] + this.getWonkyNumber(options.wonkiness)) * scaleX, (cell.y + line[0][1] + this.getWonkyNumber(options.wonkiness)) * scaleY);
-        context.lineTo((cell.x + line[1][0] + this.getWonkyNumber(options.wonkiness)) * scaleX, (cell.y + line[1][1] + this.getWonkyNumber(options.wonkiness)) * scaleY);
+        context.moveTo(...pointToCanvas(cell.x + line[0][0] + this.getWonkyNumber(options.wonkiness), cell.y + line[0][1] + this.getWonkyNumber(options.wonkiness)));
+        context.lineTo(...pointToCanvas(cell.x + line[1][0] + this.getWonkyNumber(options.wonkiness), cell.y + line[1][1] + this.getWonkyNumber(options.wonkiness)));
       }
     }
     
@@ -273,17 +304,17 @@ export class Maze {
       const x2 = bridge[1].x + bridge[1].centerOffsetX + wonky2;
       const y2 = bridge[1].y + bridge[1].centerOffsetY + wonky1;
       
-      context.lineWidth = lineWidth * bridgeWidth;
+      context.lineWidth = bridgeWidth * scale / 10;
       context.strokeStyle = options.bridgeColor;
       context.beginPath();
-      context.moveTo((x1 + (bridge[1].x - bridge[0].x) / wallFudgeFactor) * scaleX, (y1 + (bridge[1].y - bridge[0].y) / wallFudgeFactor) * scaleY);
-      context.lineTo((x2 + (bridge[0].x - bridge[1].x) / wallFudgeFactor) * scaleX, (y2 + (bridge[0].y - bridge[1].y) / wallFudgeFactor) * scaleY);
+      context.moveTo(...pointToCanvas(x1 + (bridge[1].x - bridge[0].x) / wallFudgeFactor, y1 + (bridge[1].y - bridge[0].y) / wallFudgeFactor));
+      context.lineTo(...pointToCanvas(x2 + (bridge[0].x - bridge[1].x) / wallFudgeFactor, y2 + (bridge[0].y - bridge[1].y) / wallFudgeFactor));
       context.stroke();
       context.beginPath();
       context.strokeStyle = options.backgroundColor;
-      context.lineWidth = lineWidth * (bridgeWidth - bridgeRailThickness);
-      context.moveTo((x1 + (bridge[1].x - bridge[0].x) / pathFudgeFactor) * scaleX, (y1 + (bridge[1].y - bridge[0].y) / pathFudgeFactor) * scaleY);
-      context.lineTo((x2 + (bridge[0].x - bridge[1].x) / pathFudgeFactor) * scaleX, (y2 + (bridge[0].y - bridge[1].y) / pathFudgeFactor) * scaleY);
+      context.lineWidth = (bridgeWidth - bridgeRailThickness) * scale / 10;
+      context.moveTo(...pointToCanvas(x1 + (bridge[1].x - bridge[0].x) / pathFudgeFactor, y1 + (bridge[1].y - bridge[0].y) / pathFudgeFactor));
+      context.lineTo(...pointToCanvas(x2 + (bridge[0].x - bridge[1].x) / pathFudgeFactor, y2 + (bridge[0].y - bridge[1].y) / pathFudgeFactor));
       context.stroke();
     }
     
@@ -294,8 +325,8 @@ export class Maze {
       let cell = this.currentCell ?? this.grid.finish;
       while (cell.parentCell != undefined) {
         const line = [
-          [(cell.x + cell.centerOffsetX) * scaleX, (cell.y + cell.centerOffsetY) * scaleY],
-          [(cell.parentCell.x + cell.parentCell.centerOffsetX) * scaleX, (cell.parentCell.y + cell.parentCell.centerOffsetY) * scaleY],
+          [...pointToCanvas(cell.x + cell.centerOffsetX, cell.y + cell.centerOffsetY)],
+          [...pointToCanvas(cell.parentCell.x + cell.parentCell.centerOffsetX, cell.parentCell.y + cell.parentCell.centerOffsetY)],
           "red",
         ];
         if (cell.bridgeToParent) {
@@ -358,13 +389,15 @@ export function generateSquareGrid(width, height) {
         grid[x + 1][y].neighbours["l"] = grid[x][y];
         grid[x][y].neighbours["r"] = grid[x + 1][y];
       }
-      if (y - 1 >= 0) {
-        grid[x][y - 1].neighbours["d"] = grid[x][y];
-        grid[x][y].neighbours["u"] = grid[x][y - 1];
-      }
-      if (y + 1 < height) {
-        grid[x][y + 1].neighbours["u"] = grid[x][y];
-        grid[x][y].neighbours["d"] = grid[x][y + 1];
+      if (y % 2 != 0) {
+        if (y - 1 >= 0) {
+          grid[x][y - 1].neighbours["d"] = grid[x][y];
+          grid[x][y].neighbours["u"] = grid[x][y - 1];
+        }
+        if (y + 1 < height) {
+          grid[x][y + 1].neighbours["u"] = grid[x][y];
+          grid[x][y].neighbours["d"] = grid[x][y + 1];
+        }
       }
       cells.push(grid[x][y]);
     }
@@ -381,6 +414,83 @@ export function generateSquareGrid(width, height) {
       "l": [[0, 0], [0, 1]],
       "d": [[0, 1], [1, 1]],
       "u": [[0, 0], [1, 0]],
+    },
+    grid[0][0],
+    grid[width - 1][height - 1]);
+}
+
+export function generateHexGrid(width, height) {
+  const grid = {};
+  
+  const packingModifier = 1 - Math.tan(Math.PI / 3) / 2;
+  let offset = 0;
+  
+  for (let y = 0; y < height; y++) {
+    
+    offset += packingModifier;
+    
+    for (let x = 0; x < width; x++) {
+      if (grid[x] === undefined) {
+        grid[x] = {};
+      }
+      grid[x][y] = new Cell(x + 0.5, y + 0.5 - offset + packingModifier);
+      grid[x][y].centerOffsetX = 0;
+      grid[x][y].centerOffsetY = 0;
+      if (y % 2 != 0) {
+        grid[x][y].x += 0.5;
+      }
+    }
+  }
+  
+  const cells = [];
+  
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (x - 1 >= 0) {
+        grid[x - 1][y].neighbours["r"] = grid[x][y];
+        grid[x][y].neighbours["l"] = grid[x - 1][y];
+      }
+      if (x + 1 < width) {
+        grid[x + 1][y].neighbours["l"] = grid[x][y];
+        grid[x][y].neighbours["r"] = grid[x + 1][y];
+      }
+      if (y % 2 != 0) {
+        if (y - 1 >= 0) {
+          grid[x][y - 1].neighbours["dr"] = grid[x][y];
+          grid[x][y].neighbours["ul"] = grid[x][y - 1];
+          if (x + 1 < width) {
+            grid[x + 1][y - 1].neighbours["dl"] = grid[x][y];
+            grid[x][y].neighbours["ur"] = grid[x + 1][y - 1];
+          }
+        }
+        if (y + 1 < height) {
+          grid[x][y + 1].neighbours["ur"] = grid[x][y];
+          grid[x][y].neighbours["dl"] = grid[x][y + 1];
+          if (x + 1 < width) {
+            grid[x + 1][y + 1].neighbours["ul"] = grid[x][y];
+            grid[x][y].neighbours["dr"] = grid[x + 1][y + 1];
+          }
+        }
+      }
+      cells.push(grid[x][y]);
+    }
+  }
+  
+  const wallLength = 2 * (1 / (2 * Math.tan(Math.PI / 3)))
+  
+  return new Grid(
+    width,
+    height,
+    cells,
+    ["l", "r", "ul", "ur", "dl", "dr"],
+    { "l": "r", "r": "l", "ul": "dr", "ur": "dl", "dl": "ur", "dr": "ul" },
+    {
+      "l": [[-0.5, -wallLength / 2], [-0.5, wallLength / 2]],
+      "r": [[0.5, -wallLength / 2], [0.5, wallLength / 2]],
+      "ul": [[-0.5, -wallLength / 2], [0, -wallLength]],
+      "ur": [[0.5, -wallLength / 2], [0, -wallLength]],
+      "dl": [[-0.5, wallLength / 2], [0, wallLength]],
+      "dr": [[0.5, wallLength / 2], [0, wallLength]],
     },
     grid[0][0],
     grid[width - 1][height - 1]);
