@@ -65,7 +65,7 @@ function reseed() {
 
 function setDefaultOptions() {
   document.getElementById('param-grid').value = 'Square';
-  document.getElementById('param-backtrack-method').value = 'First';
+  document.getElementById('param-backtrack-method').value = 'Random';
   document.getElementById('param-width').value = 20;
   document.getElementById('param-height').value = 20;
   document.getElementById('param-bridge-chance').value = '0.3';
